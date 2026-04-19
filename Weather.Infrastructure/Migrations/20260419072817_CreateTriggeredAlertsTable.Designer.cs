@@ -12,8 +12,8 @@ using Weather.Infrastructure.Persistence;
 namespace Weather.Infrastructure.Migrations
 {
     [DbContext(typeof(WeatherDbContext))]
-    [Migration("20260419061125_AddAlertSubscriptions")]
-    partial class AddAlertSubscriptions
+    [Migration("20260419072817_CreateTriggeredAlertsTable")]
+    partial class CreateTriggeredAlertsTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

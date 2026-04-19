@@ -5,11 +5,11 @@ namespace Weather.Infrastructure.Persistence;
 
 public class WeatherDbContext(DbContextOptions<WeatherDbContext> options) : DbContext(options)
 {
-    public DbSet<Location> Locations => Set<Location>();
+    public DbSet<Location>           Locations           => Set<Location>();
     public DbSet<WeatherObservation> WeatherObservations => Set<WeatherObservation>();
-    public DbSet<ForecastEntry> ForecastEntries => Set<ForecastEntry>();
-    public DbSet<AlertSubscription> AlertSubscriptions => Set<AlertSubscription>();
-    public DbSet<TriggeredAlert> TriggeredAlerts => Set<TriggeredAlert>();
+    public DbSet<ForecastEntry>      ForecastEntries     => Set<ForecastEntry>();
+    public DbSet<AlertSubscription>  AlertSubscriptions  => Set<AlertSubscription>();
+    public DbSet<TriggeredAlert>     TriggeredAlerts     => Set<TriggeredAlert>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

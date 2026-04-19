@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 using Weather.Api.Exceptions;
 using Weather.Application;
 using Weather.Application.Abstractions;
@@ -36,13 +37,15 @@ app.UseSwagger();
 app.UseSwaggerUI();
 app.UseExceptionHandler();
 
-// Create schema and seed on startup
+// Apply pending EF Core migrations and seed on startup.
+// MigrateAsync (unlike EnsureCreatedAsync) runs migration files in order
+// and records each applied migration in __EFMigrationsHistory.
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<WeatherDbContext>();
     var seeder = scope.ServiceProvider.GetRequiredService<IWeatherDataSeeder>();
 
-    await db.Database.EnsureCreatedAsync();
+    await db.Database.MigrateAsync();
     await seeder.SeedAsync();
 }
 
