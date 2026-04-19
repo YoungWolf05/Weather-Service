@@ -4,9 +4,9 @@ using Weather.Application.Contracts;
 using Weather.Domain.Entities;
 using Weather.Infrastructure.Persistence;
 
-namespace Weather.Infrastructure.Services;
+namespace Weather.Infrastructure.Repositories;
 
-public class WeatherQueryService(WeatherDbContext dbContext) : IWeatherQueryService
+public class WeatherReadRepository(WeatherDbContext dbContext) : IWeatherReadRepository
 {
     public async Task<IReadOnlyList<LocationResponse>> GetLocationsAsync(
         string? type,
@@ -15,61 +15,53 @@ public class WeatherQueryService(WeatherDbContext dbContext) : IWeatherQueryServ
         var query = dbContext.Locations.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(type))
-        {
-            query = query.Where(location => location.Type == type);
-        }
+            query = query.Where(l => l.Type == type);
 
         return await query
-            .OrderBy(location => location.Type)
-            .ThenBy(location => location.Name)
-            .Select(location => new LocationResponse(
-                location.Id,
-                location.Name,
-                location.Type,
-                location.ExternalId,
-                location.Region,
-                location.Latitude,
-                location.Longitude))
+            .OrderBy(l => l.Type)
+            .ThenBy(l => l.Name)
+            .Select(l => new LocationResponse(
+                l.Id, l.Name, l.Type, l.ExternalId, l.Region, l.Latitude, l.Longitude))
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<CurrentWeatherResponse> GetCurrentAsync(
+    public async Task<CurrentWeatherResponse> GetCurrentWeatherAsync(
         string location,
         CancellationToken cancellationToken = default)
     {
-        var resolvedLocation = await ResolveLocationAsync(location, cancellationToken)
+        var resolved = await ResolveLocationAsync(location, cancellationToken)
             ?? throw new KeyNotFoundException($"Location '{location}' not found.");
 
         WeatherObservationResponse? observation = null;
         WeatherForecastResponse? forecast = null;
 
-        if (resolvedLocation.Type == "station")
+        if (resolved.Type == "station")
         {
             observation = await dbContext.WeatherObservations
-                .Where(item => item.LocationId == resolvedLocation.Id)
-                .OrderByDescending(item => item.ObservedAt)
-                .Select(item => new WeatherObservationResponse(item.TemperatureCelsius, item.ObservedAt))
+                .Where(o => o.LocationId == resolved.Id)
+                .OrderByDescending(o => o.ObservedAt)
+                .Select(o => new WeatherObservationResponse(o.TemperatureCelsius, o.ObservedAt))
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        var regionName = resolvedLocation.Type == "region"
-            ? resolvedLocation.Region ?? "singapore"
-            : resolvedLocation.Region;
+        var regionName = resolved.Type == "region"
+            ? resolved.Region ?? "singapore"
+            : resolved.Region;
 
         if (regionName is not null)
         {
             var now = DateTime.UtcNow;
 
             var latestIssued = await dbContext.ForecastEntries
-                .Where(item => item.ForecastType == "period" && item.ValidFrom <= now && item.ValidTo >= now)
-                .MaxAsync(item => (DateTime?)item.IssuedAt, cancellationToken);
+                .Where(f => f.ForecastType == "period" && f.ValidFrom <= now && f.ValidTo >= now)
+                .MaxAsync(f => (DateTime?)f.IssuedAt, cancellationToken);
 
             if (latestIssued.HasValue)
             {
                 var regionLocation = await dbContext.Locations
-                    .FirstOrDefaultAsync(item => item.Name == regionName, cancellationToken);
+                    .FirstOrDefaultAsync(l => l.Name == regionName, cancellationToken);
                 var singaporeLocation = await dbContext.Locations
-                    .FirstOrDefaultAsync(item => item.Name == "singapore", cancellationToken);
+                    .FirstOrDefaultAsync(l => l.Name == "singapore", cancellationToken);
 
                 ForecastEntry? period = null;
                 ForecastEntry? general = null;
@@ -77,20 +69,20 @@ public class WeatherQueryService(WeatherDbContext dbContext) : IWeatherQueryServ
                 if (regionLocation is not null)
                 {
                     period = await dbContext.ForecastEntries.FirstOrDefaultAsync(
-                        item => item.LocationId == regionLocation.Id
-                            && item.ForecastType == "period"
-                            && item.IssuedAt == latestIssued
-                            && item.ValidFrom <= now
-                            && item.ValidTo >= now,
+                        f => f.LocationId == regionLocation.Id
+                          && f.ForecastType == "period"
+                          && f.IssuedAt == latestIssued
+                          && f.ValidFrom <= now
+                          && f.ValidTo >= now,
                         cancellationToken);
                 }
 
                 if (singaporeLocation is not null)
                 {
                     general = await dbContext.ForecastEntries.FirstOrDefaultAsync(
-                        item => item.LocationId == singaporeLocation.Id
-                            && item.ForecastType == "general"
-                            && item.IssuedAt == latestIssued,
+                        f => f.LocationId == singaporeLocation.Id
+                          && f.ForecastType == "general"
+                          && f.IssuedAt == latestIssued,
                         cancellationToken);
                 }
 
@@ -113,10 +105,10 @@ public class WeatherQueryService(WeatherDbContext dbContext) : IWeatherQueryServ
         }
 
         return new CurrentWeatherResponse(
-            resolvedLocation.Name,
-            resolvedLocation.Type,
-            resolvedLocation.ExternalId,
-            resolvedLocation.Region,
+            resolved.Name,
+            resolved.Type,
+            resolved.ExternalId,
+            resolved.Region,
             observation,
             forecast);
     }
@@ -125,42 +117,38 @@ public class WeatherQueryService(WeatherDbContext dbContext) : IWeatherQueryServ
         string location,
         CancellationToken cancellationToken = default)
     {
-        var resolvedLocation = await ResolveLocationAsync(location, cancellationToken)
+        var resolved = await ResolveLocationAsync(location, cancellationToken)
             ?? throw new KeyNotFoundException($"Location '{location}' not found.");
 
-        var regionName = resolvedLocation.Type == "region"
-            ? resolvedLocation.Region ?? "singapore"
-            : resolvedLocation.Region;
+        var regionName = resolved.Type == "region"
+            ? resolved.Region ?? "singapore"
+            : resolved.Region;
 
         if (regionName is null)
-        {
             throw new ArgumentException("Provide a region name (north/south/east/west/central).", nameof(location));
-        }
 
         var regionLocation = await dbContext.Locations
-            .FirstOrDefaultAsync(item => item.Name == regionName, cancellationToken)
+            .FirstOrDefaultAsync(l => l.Name == regionName, cancellationToken)
             ?? throw new KeyNotFoundException($"Region '{regionName}' not found.");
 
         var singaporeLocation = await dbContext.Locations
-            .FirstOrDefaultAsync(item => item.Name == "singapore", cancellationToken);
+            .FirstOrDefaultAsync(l => l.Name == "singapore", cancellationToken);
 
         var latestIssued = await dbContext.ForecastEntries
-            .Where(item => item.LocationId == regionLocation.Id)
-            .MaxAsync(item => (DateTime?)item.IssuedAt, cancellationToken);
+            .Where(f => f.LocationId == regionLocation.Id)
+            .MaxAsync(f => (DateTime?)f.IssuedAt, cancellationToken);
 
         if (latestIssued is null)
-        {
             throw new ArgumentException("No forecast data available yet. Try again after seeding.", nameof(location));
-        }
 
         WeatherForecastResponse? general = null;
 
         if (singaporeLocation is not null)
         {
             var generalEntry = await dbContext.ForecastEntries.FirstOrDefaultAsync(
-                item => item.LocationId == singaporeLocation.Id
-                    && item.ForecastType == "general"
-                    && item.IssuedAt == latestIssued,
+                f => f.LocationId == singaporeLocation.Id
+                  && f.ForecastType == "general"
+                  && f.IssuedAt == latestIssued,
                 cancellationToken);
 
             if (generalEntry is not null)
@@ -181,85 +169,68 @@ public class WeatherQueryService(WeatherDbContext dbContext) : IWeatherQueryServ
         }
 
         var periods = await dbContext.ForecastEntries
-            .Where(item => item.LocationId == regionLocation.Id
-                && item.ForecastType == "period"
-                && item.IssuedAt == latestIssued)
-            .OrderBy(item => item.ValidFrom)
-            .Select(item => new ForecastPeriodResponse(item.ValidFrom, item.ValidTo, item.ForecastText))
+            .Where(f => f.LocationId == regionLocation.Id
+                && f.ForecastType == "period"
+                && f.IssuedAt == latestIssued)
+            .OrderBy(f => f.ValidFrom)
+            .Select(f => new ForecastPeriodResponse(f.ValidFrom, f.ValidTo, f.ForecastText))
             .ToListAsync(cancellationToken);
 
         return new ForecastResponse(regionName, latestIssued.Value, general, periods);
     }
 
-    public async Task<HistoricalWeatherResponse> GetHistoricalAsync(
+    public async Task<HistoricalWeatherResponse> GetHistoricalWeatherAsync(
         string location,
         DateTime from,
         DateTime to,
         CancellationToken cancellationToken = default)
     {
         if (to < from)
-        {
             throw new ArgumentException("'to' must be after 'from'.", nameof(to));
-        }
 
-        var resolvedLocation = await ResolveLocationAsync(location, cancellationToken)
+        var resolved = await ResolveLocationAsync(location, cancellationToken)
             ?? throw new KeyNotFoundException($"Location '{location}' not found.");
 
         var utcFrom = DateTime.SpecifyKind(from, DateTimeKind.Utc);
         var utcTo = DateTime.SpecifyKind(to, DateTimeKind.Utc);
 
-        if (resolvedLocation.Type == "station")
+        if (resolved.Type == "station")
         {
             var observations = await dbContext.WeatherObservations
-                .Where(item => item.LocationId == resolvedLocation.Id
-                    && item.ObservedAt >= utcFrom
-                    && item.ObservedAt <= utcTo)
-                .OrderBy(item => item.ObservedAt)
-                .Select(item => new HistoricalObservationResponse(item.TemperatureCelsius, item.ObservedAt))
+                .Where(o => o.LocationId == resolved.Id
+                    && o.ObservedAt >= utcFrom
+                    && o.ObservedAt <= utcTo)
+                .OrderBy(o => o.ObservedAt)
+                .Select(o => new HistoricalObservationResponse(o.TemperatureCelsius, o.ObservedAt))
                 .ToListAsync(cancellationToken);
 
             return new HistoricalWeatherResponse(
-                resolvedLocation.Name,
-                utcFrom,
-                utcTo,
-                observations.Count,
-                observations,
-                null);
+                resolved.Name, utcFrom, utcTo, observations.Count, observations, null);
         }
 
-        var regionName = resolvedLocation.Region ?? resolvedLocation.Name;
+        var regionName = resolved.Region ?? resolved.Name;
         var regionLocation = await dbContext.Locations
-            .FirstOrDefaultAsync(item => item.Name == regionName, cancellationToken) ?? resolvedLocation;
+            .FirstOrDefaultAsync(l => l.Name == regionName, cancellationToken) ?? resolved;
 
         var forecasts = await dbContext.ForecastEntries
-            .Where(item => item.LocationId == regionLocation.Id
-                && item.ValidFrom >= utcFrom
-                && item.ValidFrom <= utcTo)
-            .OrderBy(item => item.IssuedAt)
-            .ThenBy(item => item.ValidFrom)
-            .Select(item => new HistoricalForecastResponse(
-                item.IssuedAt,
-                item.ValidFrom,
-                item.ValidTo,
-                item.ForecastType,
-                item.ForecastText))
+            .Where(f => f.LocationId == regionLocation.Id
+                && f.ValidFrom >= utcFrom
+                && f.ValidFrom <= utcTo)
+            .OrderBy(f => f.IssuedAt)
+            .ThenBy(f => f.ValidFrom)
+            .Select(f => new HistoricalForecastResponse(
+                f.IssuedAt, f.ValidFrom, f.ValidTo, f.ForecastType, f.ForecastText))
             .ToListAsync(cancellationToken);
 
         return new HistoricalWeatherResponse(
-            resolvedLocation.Name,
-            utcFrom,
-            utcTo,
-            forecasts.Count,
-            null,
-            forecasts);
+            resolved.Name, utcFrom, utcTo, forecasts.Count, null, forecasts);
     }
 
     private Task<Location?> ResolveLocationAsync(string location, CancellationToken cancellationToken)
     {
-        var loweredLocation = location.ToLower();
-
+        var lower = location.ToLower();
         return dbContext.Locations.FirstOrDefaultAsync(
-            item => item.Name.ToLower() == loweredLocation || item.ExternalId == location,
+            l => l.Name.ToLower() == lower || l.ExternalId == location,
             cancellationToken);
     }
 }

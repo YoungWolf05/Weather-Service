@@ -1,4 +1,8 @@
-using Weather.Application.Abstractions;
+using MediatR;
+using Weather.Application.Weather.Queries.GetCurrentWeather;
+using Weather.Application.Weather.Queries.GetForecast;
+using Weather.Application.Weather.Queries.GetHistoricalWeather;
+using Weather.Application.Weather.Queries.GetLocations;
 
 namespace Weather.Api.Endpoints;
 
@@ -8,10 +12,10 @@ public static class WeatherEndpoints
     {
         var g = app.MapGroup("/api/weather").WithTags("Weather");
 
-        g.MapGet("/current",    GetCurrentAsync)
+        g.MapGet("/current", GetCurrentAsync)
          .WithSummary("Get current weather by location (station name/ID for temperature, region for forecast)");
 
-        g.MapGet("/forecast",   GetForecastAsync)
+        g.MapGet("/forecast", GetForecastAsync)
          .WithSummary("Get latest 24 h forecast breakdown by region (north/south/east/west/central)");
 
         g.MapGet("/historical", GetHistoricalAsync)
@@ -24,72 +28,54 @@ public static class WeatherEndpoints
 
     static async Task<IResult> GetCurrentAsync(
         string location,
-        IWeatherQueryService weatherQueryService,
+        ISender sender,
         CancellationToken cancellationToken)
     {
         try
         {
-            var response = await weatherQueryService.GetCurrentAsync(location, cancellationToken);
+            var response = await sender.Send(new GetCurrentWeatherQuery(location), cancellationToken);
             return Results.Ok(response);
         }
-        catch (KeyNotFoundException exception)
-        {
-            return Results.NotFound(new { error = exception.Message });
-        }
-        catch (ArgumentException exception)
-        {
-            return Results.BadRequest(new { error = exception.Message });
-        }
+        catch (KeyNotFoundException ex) { return Results.NotFound(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
     }
 
     static async Task<IResult> GetForecastAsync(
         string location,
-        IWeatherQueryService weatherQueryService,
+        ISender sender,
         CancellationToken cancellationToken)
     {
         try
         {
-            var response = await weatherQueryService.GetForecastAsync(location, cancellationToken);
+            var response = await sender.Send(new GetForecastQuery(location), cancellationToken);
             return Results.Ok(response);
         }
-        catch (KeyNotFoundException exception)
-        {
-            return Results.NotFound(new { error = exception.Message });
-        }
-        catch (ArgumentException exception)
-        {
-            return Results.BadRequest(new { error = exception.Message });
-        }
+        catch (KeyNotFoundException ex) { return Results.NotFound(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
     }
 
     static async Task<IResult> GetHistoricalAsync(
         string location,
         DateTime from,
         DateTime to,
-        IWeatherQueryService weatherQueryService,
+        ISender sender,
         CancellationToken cancellationToken)
     {
         try
         {
-            var response = await weatherQueryService.GetHistoricalAsync(location, from, to, cancellationToken);
+            var response = await sender.Send(new GetHistoricalWeatherQuery(location, from, to), cancellationToken);
             return Results.Ok(response);
         }
-        catch (KeyNotFoundException exception)
-        {
-            return Results.NotFound(new { error = exception.Message });
-        }
-        catch (ArgumentException exception)
-        {
-            return Results.BadRequest(new { error = exception.Message });
-        }
+        catch (KeyNotFoundException ex) { return Results.NotFound(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
     }
 
     static async Task<IResult> GetLocationsAsync(
         string? type,
-        IWeatherQueryService weatherQueryService,
+        ISender sender,
         CancellationToken cancellationToken)
     {
-        var response = await weatherQueryService.GetLocationsAsync(type, cancellationToken);
+        var response = await sender.Send(new GetLocationsQuery(type), cancellationToken);
         return Results.Ok(response);
     }
 }

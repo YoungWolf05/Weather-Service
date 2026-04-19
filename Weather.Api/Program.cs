@@ -1,5 +1,6 @@
-using Weather.Application.Abstractions;
 using Weather.Api.Endpoints;
+using Weather.Application;
+using Weather.Application.Abstractions;
 using Weather.Infrastructure;
 using Weather.Infrastructure.Persistence;
 using Weather.Seeder;
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("weatherdb")
     ?? throw new InvalidOperationException("Connection string 'weatherdb' is required.");
 
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(connectionString);
 builder.Services.AddWeatherSeeder();
 
@@ -32,5 +34,7 @@ await using (var scope = app.Services.CreateAsyncScope())
 }
 
 app.MapWeatherEndpoints();
+
+app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 
 app.Run();
