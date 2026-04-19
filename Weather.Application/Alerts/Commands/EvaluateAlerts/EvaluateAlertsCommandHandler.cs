@@ -1,12 +1,14 @@
 using MediatR;
 using Weather.Application.Abstractions;
+using Weather.Application.Contracts;
 using Weather.Domain.Entities;
 
 namespace Weather.Application.Alerts.Commands.EvaluateAlerts;
 
 public sealed class EvaluateAlertsCommandHandler(
     IAlertRepository alertRepository,
-    IWeatherReadRepository weatherRepository) : IRequestHandler<EvaluateAlertsCommand, int>
+    IWeatherReadRepository weatherRepository,
+    IAlertNotifier alertNotifier) : IRequestHandler<EvaluateAlertsCommand, int>
 {
     public async Task<int> Handle(EvaluateAlertsCommand request, CancellationToken cancellationToken)
     {
@@ -35,13 +37,26 @@ public sealed class EvaluateAlertsCommandHandler(
             if (alreadyTriggered)
                 continue;
 
-            await alertRepository.AddTriggeredAlertAsync(new TriggeredAlert
+            var triggeredAlert = new TriggeredAlert
             {
                 AlertSubscriptionId = subscription.Id,
                 ObservationId       = observationId,
                 TemperatureCelsius  = temperatureCelsius,
                 TriggeredAt         = DateTime.UtcNow
-            }, cancellationToken);
+            };
+
+            await alertRepository.AddTriggeredAlertAsync(triggeredAlert, cancellationToken);
+
+            await alertNotifier.NotifyTriggeredAsync(
+                subscription.Email,
+                new TriggeredAlertResponse(
+                    triggeredAlert.Id,
+                    subscription.Location.Name,
+                    triggeredAlert.TemperatureCelsius,
+                    subscription.ThresholdCelsius,
+                    subscription.Condition,
+                    triggeredAlert.TriggeredAt),
+                cancellationToken);
 
             fired++;
         }

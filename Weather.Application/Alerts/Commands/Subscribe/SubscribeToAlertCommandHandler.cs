@@ -7,11 +7,11 @@ namespace Weather.Application.Alerts.Commands.Subscribe;
 
 public sealed class SubscribeToAlertCommandHandler(
     IAlertRepository alertRepository,
-    IWeatherReadRepository weatherRepository) : IRequestHandler<SubscribeToAlertCommand, AlertSubscriptionResponse>
+    IWeatherReadRepository weatherRepository) : IRequestHandler<SubscribeToAlertCommand, SignalRAlertSubscriptionResponse>
 {
     private static readonly HashSet<string> ValidConditions = ["above", "below"];
 
-    public async Task<AlertSubscriptionResponse> Handle(
+    public async Task<SignalRAlertSubscriptionResponse> Handle(
         SubscribeToAlertCommand request,
         CancellationToken cancellationToken)
     {
@@ -45,13 +45,14 @@ public sealed class SubscribeToAlertCommandHandler(
 
         await alertRepository.AddSubscriptionAsync(subscription, cancellationToken);
 
-        return new AlertSubscriptionResponse(
+        return new SignalRAlertSubscriptionResponse(
             subscription.Id,
             subscription.Email,
             location.Name,
             subscription.ThresholdCelsius,
             subscription.Condition,
             subscription.IsActive,
-            subscription.CreatedAt);
+            subscription.CreatedAt,
+            $"alerts:{subscription.Email}");
     }
 }

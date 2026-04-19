@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Weather Live Alerts Demo</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
+        main {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        p, li, label, button, input, select {
+            font-size: 14px;
+        }
+
+        .panel {
+            background: #111827;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        input, select, button {
+            border-radius: 8px;
+            border: 1px solid #475569;
+            padding: 10px 12px;
+            background: #0f172a;
+            color: inherit;
+        }
+
+        button {
+            cursor: pointer;
+            background: #2563eb;
+            border-color: #2563eb;
+            font-weight: 600;
+        }
+
+        button.secondary {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        #status {
+            font-weight: 700;
+        }
+
+        #events {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #events li {
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 12px;
+            background: #020617;
+        }
+
+        code {
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Weather Live Alerts Demo</h1>
+    <p>Connect a browser by email, create a subscription, then wait for the periodic data poll or click evaluate to test delivery.</p>
+
+    <section class="panel">
+        <div class="grid">
+            <label>
+                Email
+                <input id="email" type="email" value="demo@example.com" />
+            </label>
+            <label>
+                Station
+                <input id="location" type="text" value="ang mo kio" />
+            </label>
+            <label>
+                Threshold (C)
+                <input id="threshold" type="number" step="0.1" value="1" />
+            </label>
+            <label>
+                Condition
+                <select id="condition">
+                    <option value="above">above</option>
+                    <option value="below">below</option>
+                </select>
+            </label>
+        </div>
+        <div class="grid" style="margin-top: 12px;">
+            <button id="connect">Connect Live Alerts</button>
+            <button id="subscribe">Create Subscription</button>
+            <button id="history" class="secondary">Load History</button>
+            <button id="evaluate" class="secondary">Evaluate Now</button>
+        </div>
+        <p id="status">Disconnected</p>
+        <p>Hub endpoint: <code id="hubUrl">not connected</code></p>
+    </section>
+
+    <section class="panel">
+        <strong>How to demo quickly</strong>
+        <ol>
+            <li>Connect with an email address.</li>
+            <li>Create an <code>above</code> alert with a very low threshold like <code>1</code>.</li>
+            <li>Click <code>Evaluate Now</code> or wait for the background poll.</li>
+        </ol>
+    </section>
+
+    <section class="panel">
+        <strong>Events</strong>
+        <ul id="events"></ul>
+    </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    const emailInput = document.getElementById("email");
+    const locationInput = document.getElementById("location");
+    const thresholdInput = document.getElementById("threshold");
+    const conditionInput = document.getElementById("condition");
+    const status = document.getElementById("status");
+    const hubUrlText = document.getElementById("hubUrl");
+    const events = document.getElementById("events");
+
+    let connection;
+
+    function addEvent(title, payload) {
+        const item = document.createElement("li");
+        const now = new Date().toLocaleTimeString();
+        item.innerHTML = `<strong>${title}</strong><br><small>${now}</small><pre>${JSON.stringify(payload, null, 2)}</pre>`;
+        events.prepend(item);
+    }
+
+    function getEmail() {
+        return emailInput.value.trim().toLowerCase();
+    }
+
+    async function connect() {
+        const email = getEmail();
+
+        if (!email) {
+            alert("Enter an email first.");
+            return;
+        }
+
+        if (connection) {
+            await connection.stop();
+        }
+
+        const hubUrl = `/hubs/alerts?email=${encodeURIComponent(email)}`;
+        hubUrlText.textContent = hubUrl;
+
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl(hubUrl)
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("alertTriggered", alertPayload => {
+            status.textContent = `Connected as ${email}`;
+            addEvent("Live alert received", alertPayload);
+        });
+
+        connection.onreconnecting(() => {
+            status.textContent = "Reconnecting...";
+        });
+
+        connection.onreconnected(() => {
+            status.textContent = `Connected as ${email}`;
+        });
+
+        await connection.start();
+        status.textContent = `Connected as ${email}`;
+        addEvent("SignalR connected", { hubUrl, email });
+    }
+
+    async function createSubscription() {
+        const email = getEmail();
+        const params = new URLSearchParams({
+            email,
+            location: locationInput.value.trim(),
+            thresholdCelsius: thresholdInput.value,
+            condition: conditionInput.value
+        });
+
+        const response = await fetch(`/api/alerts/subscriptions?${params}`, { method: "POST" });
+        const payload = await response.json();
+
+        if (!response.ok) {
+            addEvent("Subscription failed", payload);
+            return;
+        }
+
+        addEvent("Subscription created", payload);
+    }
+
+    async function loadHistory() {
+        const email = getEmail();
+        const response = await fetch(`/api/alerts/triggered?email=${encodeURIComponent(email)}&limit=20`);
+        const payload = await response.json();
+        addEvent("Triggered history", payload);
+    }
+
+    async function evaluateAlerts() {
+        const response = await fetch("/api/alerts/evaluate", { method: "POST" });
+        const payload = await response.json();
+        addEvent("Manual evaluation", payload);
+    }
+
+    document.getElementById("connect").addEventListener("click", () => connect().catch(error => addEvent("SignalR error", { message: error.message })));
+    document.getElementById("subscribe").addEventListener("click", () => createSubscription().catch(error => addEvent("Subscription error", { message: error.message })));
+    document.getElementById("history").addEventListener("click", () => loadHistory().catch(error => addEvent("History error", { message: error.message })));
+    document.getElementById("evaluate").addEventListener("click", () => evaluateAlerts().catch(error => addEvent("Evaluate error", { message: error.message })));
+</script>
+</body>
+</html>

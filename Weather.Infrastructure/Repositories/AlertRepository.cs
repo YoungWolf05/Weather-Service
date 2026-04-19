@@ -11,6 +11,7 @@ public class AlertRepository(WeatherDbContext dbContext) : IAlertRepository
     public async Task<IReadOnlyList<AlertSubscription>> GetActiveSubscriptionsAsync(
         CancellationToken cancellationToken = default)
         => await dbContext.AlertSubscriptions
+            .Include(s => s.Location)
             .Where(s => s.IsActive)
             .ToListAsync(cancellationToken);
 

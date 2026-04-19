@@ -6,6 +6,7 @@ using Weather.Application.Alerts.Commands.Unsubscribe;
 using Weather.Application.Alerts.Queries.GetSubscriptions;
 using Weather.Application.Alerts.Queries.GetTriggeredAlerts;
 using Weather.Application.Contracts;
+using Weather.Api.Hubs;
 
 namespace Weather.Api.Controllers;
 
@@ -23,9 +24,10 @@ public class AlertsController(ISender sender) : ControllerBase
     /// Only station locations are supported (not regions).
     /// <paramref name="condition"/> must be <c>"above"</c> or <c>"below"</c>.
     /// An exact duplicate subscription (same email + station + condition) is rejected with 400.
+    /// For the live demo, connect a browser to the SignalR hub group named by <c>liveChannel</c>.
     /// </remarks>
     [HttpPost("subscriptions")]
-    [ProducesResponseType<AlertSubscriptionResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<SignalRAlertSubscriptionResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SubscribeAsync(
@@ -40,6 +42,22 @@ public class AlertsController(ISender sender) : ControllerBase
             cancellationToken);
 
         return Created($"/api/alerts/subscriptions?email={Uri.EscapeDataString(result.Email)}", result);
+    }
+
+    /// <summary>Get SignalR connection details for a subscriber email.</summary>
+    /// <param name="email">Subscriber email used as the demo SignalR group key.</param>
+    [HttpGet("live")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult GetLiveDetails([FromQuery] string email)
+    {
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+
+        return Ok(new
+        {
+            hubUrl = $"/hubs/alerts?email={Uri.EscapeDataString(normalizedEmail)}",
+            liveChannel = AlertChannel.ForEmail(normalizedEmail),
+            clientEvent = AlertsHub.ClientMethod
+        });
     }
 
     /// <summary>Unsubscribe (deactivate) an alert subscription.</summary>

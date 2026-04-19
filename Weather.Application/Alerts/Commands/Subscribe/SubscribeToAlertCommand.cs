@@ -11,4 +11,4 @@ public sealed record SubscribeToAlertCommand(
     string Email,
     string Location,
     decimal ThresholdCelsius,
-    string Condition) : IRequest<AlertSubscriptionResponse>;
+    string Condition) : IRequest<SignalRAlertSubscriptionResponse>;

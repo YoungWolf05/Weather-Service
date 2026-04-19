@@ -1,6 +1,8 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Weather.Api.Hubs;
 using Weather.Api.Exceptions;
+using Weather.Api.Services;
 using Weather.Application;
 using Weather.Application.Abstractions;
 using Weather.Infrastructure;
@@ -17,6 +19,9 @@ builder.Services.AddInfrastructure(connectionString);
 builder.Services.AddWeatherSeeder();
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IAlertNotifier, SignalRAlertNotifier>();
+builder.Services.AddHostedService<WeatherSeedWorker>();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -36,6 +41,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseExceptionHandler();
+app.UseStaticFiles();
 
 // Apply pending EF Core migrations and seed on startup.
 // MigrateAsync (unlike EnsureCreatedAsync) runs migration files in order
@@ -50,6 +56,9 @@ await using (var scope = app.Services.CreateAsyncScope())
 }
 
 app.MapControllers();
+app.MapHub<AlertsHub>("/hubs/alerts");
+
+app.MapGet("/alerts/demo", () => Results.Redirect("/alerts-demo.html")).ExcludeFromDescription();
 
 app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 
