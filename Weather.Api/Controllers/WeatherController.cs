@@ -1,10 +1,14 @@
+using CsvHelper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 using Weather.Application.Contracts;
+using Weather.Application.Weather.Queries.ExportCurrentWeather;
 using Weather.Application.Weather.Queries.GetCurrentWeather;
 using Weather.Application.Weather.Queries.GetForecast;
 using Weather.Application.Weather.Queries.GetHistoricalWeather;
 using Weather.Application.Weather.Queries.GetLocations;
+using Weather.Api.Csv;
 
 namespace Weather.Api.Controllers;
 
@@ -90,5 +94,38 @@ public class WeatherController(ISender sender) : ControllerBase
     {
         var result = await sender.Send(new GetHistoricalWeatherQuery(location, from, to), cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>Export current weather for a location as a CSV file.</summary>
+    /// <remarks>
+    /// Returns a single-row CSV with all available observation and forecast fields flattened.
+    /// Null fields are exported as empty cells.
+    /// </remarks>
+    /// <param name="location">Station name/ID or region name.</param>
+    /// <param name="cancellationToken"></param>
+    [HttpGet("weather/current/export")]
+    [Produces("text/csv")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ExportCurrentAsync(
+        [FromQuery] string location,
+        CancellationToken cancellationToken)
+    {
+        var row = await sender.Send(new ExportCurrentWeatherQuery(location), cancellationToken);
+
+        var stream = new MemoryStream();
+        await using (var writer = new StreamWriter(stream, leaveOpen: true))
+        await using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+        {
+            csv.Context.RegisterClassMap<WeatherExportMap>();
+            csv.WriteHeader<CurrentWeatherExportDto>();
+            await csv.NextRecordAsync();
+            csv.WriteRecord(row);
+            await csv.NextRecordAsync();
+        }
+
+        stream.Position = 0;
+        return File(stream, "text/csv", $"weather-{location}.csv");
     }
 }
