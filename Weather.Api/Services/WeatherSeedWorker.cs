@@ -1,4 +1,6 @@
-using Weather.Application.Abstractions;
+using MediatR;
+using Weather.Application.Alerts.Commands.EvaluateAlerts;
+using Weather.Seeder.Services;
 
 namespace Weather.Api.Services;
 
@@ -26,8 +28,14 @@ public sealed class WeatherSeedWorker(
                     break;
 
                 await using var scope = serviceScopeFactory.CreateAsyncScope();
-                var seeder = scope.ServiceProvider.GetRequiredService<IWeatherDataSeeder>();
+                var seeder = scope.ServiceProvider.GetRequiredService<SingaporeWeatherSeeder>();
+                var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+
                 await seeder.SeedAsync(stoppingToken);
+
+                var fired = await sender.Send(new EvaluateAlertsCommand(), stoppingToken);
+                if (fired > 0)
+                    logger.LogInformation("Alert evaluation complete: {Count} new alert(s) triggered.", fired);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

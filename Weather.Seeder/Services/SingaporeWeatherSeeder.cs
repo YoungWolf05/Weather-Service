@@ -1,11 +1,8 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Weather.Application.Abstractions;
-using Weather.Application.Alerts.Commands.EvaluateAlerts;
 using Weather.Domain.Entities;
 using Weather.Infrastructure.Persistence;
 
@@ -14,8 +11,7 @@ namespace Weather.Seeder.Services;
 public class SingaporeWeatherSeeder(
     WeatherDbContext dbContext,
     IHttpClientFactory httpClientFactory,
-    ISender sender,
-    ILogger<SingaporeWeatherSeeder> logger) : IWeatherDataSeeder
+    ILogger<SingaporeWeatherSeeder> logger)
 {
     private static readonly string[] Regions = ["north", "south", "east", "west", "central"];
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -25,10 +21,6 @@ public class SingaporeWeatherSeeder(
         await EnsureRegionsAsync(cancellationToken);
         await SeedAirTemperatureAsync(cancellationToken);
         await SeedForecastAsync(cancellationToken);
-
-        var fired = await sender.Send(new EvaluateAlertsCommand(), cancellationToken);
-        if (fired > 0)
-            logger.LogInformation("Alert evaluation complete: {Count} new alert(s) triggered.", fired);
     }
 
     private async Task EnsureRegionsAsync(CancellationToken cancellationToken)

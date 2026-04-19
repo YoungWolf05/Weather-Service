@@ -1,13 +1,16 @@
 using System.Reflection;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Weather.Api.Hubs;
 using Weather.Api.Exceptions;
+using Weather.Api.Hubs;
 using Weather.Api.Services;
 using Weather.Application;
+using Weather.Application.Alerts.Commands.EvaluateAlerts;
 using Weather.Application.Abstractions;
 using Weather.Infrastructure;
 using Weather.Infrastructure.Persistence;
 using Weather.Seeder;
+using Weather.Seeder.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,7 +36,9 @@ builder.Services.AddSwaggerGen(c =>
 
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    c.IncludeXmlComments(xmlPath);
+
+    if (File.Exists(xmlPath))
+        c.IncludeXmlComments(xmlPath);
 });
 
 var app = builder.Build();
@@ -43,23 +48,21 @@ app.UseSwaggerUI();
 app.UseExceptionHandler();
 app.UseStaticFiles();
 
-// Apply pending EF Core migrations and seed on startup.
-// MigrateAsync (unlike EnsureCreatedAsync) runs migration files in order
-// and records each applied migration in __EFMigrationsHistory.
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<WeatherDbContext>();
-    var seeder = scope.ServiceProvider.GetRequiredService<IWeatherDataSeeder>();
+    var seeder = scope.ServiceProvider.GetRequiredService<SingaporeWeatherSeeder>();
+    var sender = scope.ServiceProvider.GetRequiredService<ISender>();
 
     await db.Database.MigrateAsync();
     await seeder.SeedAsync();
+    await sender.Send(new EvaluateAlertsCommand());
 }
 
 app.MapControllers();
 app.MapHub<AlertsHub>("/hubs/alerts");
 
 app.MapGet("/alerts/demo", () => Results.Redirect("/alerts-demo.html")).ExcludeFromDescription();
-
 app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 
 app.Run();
