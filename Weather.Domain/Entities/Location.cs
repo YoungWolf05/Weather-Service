@@ -14,4 +14,5 @@ public class Location
 
     public ICollection<WeatherObservation> Observations { get; set; } = [];
     public ICollection<ForecastEntry> Forecasts { get; set; } = [];
+    public ICollection<AlertSubscription> AlertSubscriptions { get; set; } = [];
 }

@@ -21,4 +21,8 @@ public interface IWeatherReadRepository
         DateTime from,
         DateTime to,
         CancellationToken cancellationToken = default);
+
+    Task<(long Id, decimal TemperatureCelsius, DateTime ObservedAt)?> GetLatestObservationAsync(
+        int locationId,
+        CancellationToken cancellationToken = default);
 }

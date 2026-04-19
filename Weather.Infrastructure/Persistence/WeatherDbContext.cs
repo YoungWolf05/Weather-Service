@@ -8,6 +8,8 @@ public class WeatherDbContext(DbContextOptions<WeatherDbContext> options) : DbCo
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<WeatherObservation> WeatherObservations => Set<WeatherObservation>();
     public DbSet<ForecastEntry> ForecastEntries => Set<ForecastEntry>();
+    public DbSet<AlertSubscription> AlertSubscriptions => Set<AlertSubscription>();
+    public DbSet<TriggeredAlert> TriggeredAlerts => Set<TriggeredAlert>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -56,6 +58,34 @@ public class WeatherDbContext(DbContextOptions<WeatherDbContext> options) : DbCo
             entity.HasOne(x => x.Location)
                 .WithMany(x => x.Forecasts)
                 .HasForeignKey(x => x.LocationId);
+        });
+
+        modelBuilder.Entity<AlertSubscription>(entity =>
+        {
+            entity.ToTable("alert_subscriptions");
+            entity.Property(x => x.Email).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Condition).HasMaxLength(10).IsRequired();
+            entity.Property(x => x.ThresholdCelsius).HasPrecision(5, 2);
+            entity.Property(x => x.IsActive).HasDefaultValue(true);
+            entity.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.HasIndex(x => new { x.Email, x.LocationId, x.Condition }).IsUnique();
+            entity.HasOne(x => x.Location)
+                .WithMany(x => x.AlertSubscriptions)
+                .HasForeignKey(x => x.LocationId);
+        });
+
+        modelBuilder.Entity<TriggeredAlert>(entity =>
+        {
+            entity.ToTable("alert_triggered");
+            entity.Property(x => x.TemperatureCelsius).HasPrecision(5, 2);
+            entity.Property(x => x.TriggeredAt).HasDefaultValueSql("NOW()");
+            entity.HasIndex(x => new { x.AlertSubscriptionId, x.ObservationId }).IsUnique();
+            entity.HasOne(x => x.AlertSubscription)
+                .WithMany(x => x.TriggeredAlerts)
+                .HasForeignKey(x => x.AlertSubscriptionId);
+            entity.HasOne(x => x.Observation)
+                .WithMany()
+                .HasForeignKey(x => x.ObservationId);
         });
     }
 }

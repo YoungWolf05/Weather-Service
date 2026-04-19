@@ -233,4 +233,20 @@ public class WeatherReadRepository(WeatherDbContext dbContext) : IWeatherReadRep
             l => l.Name.ToLower() == lower || l.ExternalId == location,
             cancellationToken);
     }
+
+    public async Task<(long Id, decimal TemperatureCelsius, DateTime ObservedAt)?> GetLatestObservationAsync(
+        int locationId,
+        CancellationToken cancellationToken = default)
+    {
+        var row = await dbContext.WeatherObservations
+            .Where(o => o.LocationId == locationId)
+            .OrderByDescending(o => o.ObservedAt)
+            .Select(o => new { o.Id, o.TemperatureCelsius, o.ObservedAt })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (row is null)
+            return null;
+
+        return (row.Id, row.TemperatureCelsius, row.ObservedAt);
+    }
 }

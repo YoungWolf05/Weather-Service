@@ -12,6 +12,7 @@ public static class DependencyInjection
     {
         services.AddDbContext<WeatherDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IWeatherReadRepository, WeatherReadRepository>();
+        services.AddScoped<IAlertRepository, AlertRepository>();
 
         return services;
     }
