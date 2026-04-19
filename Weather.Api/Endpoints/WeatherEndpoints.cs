@@ -1,6 +1,6 @@
 using Weather.Application.Abstractions;
 
-namespace WeatherApi.Endpoints;
+namespace Weather.Api.Endpoints;
 
 public static class WeatherEndpoints
 {

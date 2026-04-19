@@ -1,5 +1,5 @@
 using Weather.Application.Abstractions;
-using WeatherApi.Endpoints;
+using Weather.Api.Endpoints;
 using Weather.Infrastructure;
 using Weather.Infrastructure.Persistence;
 using Weather.Seeder;

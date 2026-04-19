@@ -6,7 +6,7 @@ var postgres = builder.AddPostgres("postgres")
 
 var weatherDb = postgres.AddDatabase("weatherdb");
 
-builder.AddProject<Projects.WeatherApi>("weatherapi")
+builder.AddProject<Projects.Weather_Api>("weatherapi")
     .WithReference(weatherDb)
     .WaitFor(postgres);
 
