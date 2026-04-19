@@ -108,7 +108,7 @@
             </label>
             <label>
                 Station
-                <input id="location" type="text" value="ang mo kio" />
+                <select id="location"></select>
             </label>
             <label>
                 Threshold (C)
@@ -125,11 +125,15 @@
         <div class="grid" style="margin-top: 12px;">
             <button id="connect">Connect Live Alerts</button>
             <button id="subscribe">Create Subscription</button>
-            <button id="history" class="secondary">Load History</button>
             <button id="evaluate" class="secondary">Evaluate Now</button>
         </div>
         <p id="status">Disconnected</p>
         <p>Hub endpoint: <code id="hubUrl">not connected</code></p>
+    </section>
+
+    <section class="panel">
+        <strong>Subscriptions</strong>
+        <ul id="subscriptions"></ul>
     </section>
 
     <section class="panel">
@@ -138,6 +142,7 @@
             <li>Connect with an email address.</li>
             <li>Create an <code>above</code> alert with a very low threshold like <code>1</code>.</li>
             <li>Click <code>Evaluate Now</code> or wait for the background poll.</li>
+            <li>Use the subscription list to clear one item or all items for that email.</li>
         </ol>
     </section>
 
@@ -156,8 +161,18 @@
     const status = document.getElementById("status");
     const hubUrlText = document.getElementById("hubUrl");
     const events = document.getElementById("events");
+    const subscriptions = document.getElementById("subscriptions");
 
     let connection;
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#39;");
+    }
 
     function addEvent(title, payload) {
         const item = document.createElement("li");
@@ -168,6 +183,101 @@
 
     function getEmail() {
         return emailInput.value.trim().toLowerCase();
+    }
+
+    async function loadLocations() {
+        const response = await fetch("/api/locations?type=station");
+        const payload = await response.json();
+
+        locationInput.innerHTML = payload
+            .map(location => `<option value="${escapeHtml(location.name)}">${escapeHtml(location.name)}</option>`)
+            .join("");
+    }
+
+    async function loadSubscriptions() {
+        const email = getEmail();
+
+        if (!email) {
+            subscriptions.innerHTML = "<li>Enter an email to load subscriptions.</li>";
+            return;
+        }
+
+        const response = await fetch(`/api/alerts/subscriptions?email=${encodeURIComponent(email)}`);
+        const payload = await response.json();
+
+        if (!response.ok) {
+            addEvent("Subscription list error", payload);
+            subscriptions.innerHTML = "<li>Failed to load subscriptions.</li>";
+            return;
+        }
+
+        const active = payload.filter(subscription => subscription.isActive);
+
+        if (!active.length) {
+            subscriptions.innerHTML = `<li>No active subscriptions for ${escapeHtml(email)}.</li>`;
+            return;
+        }
+
+        subscriptions.innerHTML = active.map(subscription => `
+            <li>
+                <strong>${escapeHtml(subscription.locationName)}</strong>
+                <div>${escapeHtml(subscription.condition)} ${escapeHtml(subscription.thresholdCelsius)} C</div>
+                <div>Subscription #${escapeHtml(subscription.id)}</div>
+                <button type="button" class="secondary" data-subscription-id="${escapeHtml(subscription.id)}">Clear</button>
+            </li>
+        `).join("");
+
+        if (active.length > 1) {
+            subscriptions.insertAdjacentHTML(
+                "afterbegin",
+                `<li><button type="button" id="clearAllSubscriptions" class="secondary">Clear All Active Subscriptions</button></li>`);
+
+            document.getElementById("clearAllSubscriptions").addEventListener("click", () =>
+                clearAllSubscriptions().catch(error => addEvent("Clear all error", { message: error.message })));
+        }
+
+        subscriptions.querySelectorAll("[data-subscription-id]").forEach(button => {
+            button.addEventListener("click", () =>
+                clearSubscription(button.getAttribute("data-subscription-id"))
+                    .catch(error => addEvent("Clear subscription error", { message: error.message })));
+        });
+    }
+
+    async function clearSubscription(subscriptionId) {
+        const email = getEmail();
+        const response = await fetch(
+            `/api/alerts/subscriptions/${subscriptionId}?email=${encodeURIComponent(email)}`,
+            { method: "DELETE" });
+
+        if (!response.ok) {
+            const payload = await response.json();
+            addEvent("Subscription clear failed", payload);
+            return;
+        }
+
+        addEvent("Subscription cleared", { subscriptionId, email });
+        await loadSubscriptions();
+    }
+
+    async function clearAllSubscriptions() {
+        const email = getEmail();
+        const response = await fetch(`/api/alerts/subscriptions?email=${encodeURIComponent(email)}`);
+        const payload = await response.json();
+
+        if (!response.ok) {
+            addEvent("Clear all load failed", payload);
+            return;
+        }
+
+        const active = payload.filter(subscription => subscription.isActive);
+        for (const subscription of active) {
+            await fetch(
+                `/api/alerts/subscriptions/${subscription.id}?email=${encodeURIComponent(email)}`,
+                { method: "DELETE" });
+        }
+
+        addEvent("All subscriptions cleared", { email, count: active.length });
+        await loadSubscriptions();
     }
 
     async function connect() {
@@ -206,6 +316,7 @@
         await connection.start();
         status.textContent = `Connected as ${email}`;
         addEvent("SignalR connected", { hubUrl, email });
+        await loadSubscriptions();
     }
 
     async function createSubscription() {
@@ -226,13 +337,7 @@
         }
 
         addEvent("Subscription created", payload);
-    }
-
-    async function loadHistory() {
-        const email = getEmail();
-        const response = await fetch(`/api/alerts/triggered?email=${encodeURIComponent(email)}&limit=20`);
-        const payload = await response.json();
-        addEvent("Triggered history", payload);
+        await loadSubscriptions();
     }
 
     async function evaluateAlerts() {
@@ -243,8 +348,12 @@
 
     document.getElementById("connect").addEventListener("click", () => connect().catch(error => addEvent("SignalR error", { message: error.message })));
     document.getElementById("subscribe").addEventListener("click", () => createSubscription().catch(error => addEvent("Subscription error", { message: error.message })));
-    document.getElementById("history").addEventListener("click", () => loadHistory().catch(error => addEvent("History error", { message: error.message })));
     document.getElementById("evaluate").addEventListener("click", () => evaluateAlerts().catch(error => addEvent("Evaluate error", { message: error.message })));
+    emailInput.addEventListener("change", () => loadSubscriptions().catch(error => addEvent("Email change error", { message: error.message })));
+
+    loadLocations()
+        .then(() => loadSubscriptions())
+        .catch(error => addEvent("Initial load error", { message: error.message }));
 </script>
 </body>
 </html>

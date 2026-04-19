@@ -71,21 +71,4 @@ public class AlertRepository(WeatherDbContext dbContext) : IAlertRepository
                 s.IsActive,
                 s.CreatedAt))
             .ToListAsync(cancellationToken);
-
-    public async Task<IReadOnlyList<TriggeredAlertResponse>> GetTriggeredAlertsForEmailAsync(
-        string email,
-        int limit,
-        CancellationToken cancellationToken = default)
-        => await dbContext.TriggeredAlerts
-            .Where(t => t.AlertSubscription.Email == email)
-            .OrderByDescending(t => t.TriggeredAt)
-            .Take(limit)
-            .Select(t => new TriggeredAlertResponse(
-                t.Id,
-                t.AlertSubscription.Location.Name,
-                t.TemperatureCelsius,
-                t.AlertSubscription.ThresholdCelsius,
-                t.AlertSubscription.Condition,
-                t.TriggeredAt))
-            .ToListAsync(cancellationToken);
 }

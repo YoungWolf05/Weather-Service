@@ -16,6 +16,4 @@ public interface IAlertRepository
     Task AddTriggeredAlertAsync(TriggeredAlert alert, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<AlertSubscriptionResponse>> GetSubscriptionsForEmailAsync(string email, CancellationToken cancellationToken = default);
-
-    Task<IReadOnlyList<TriggeredAlertResponse>> GetTriggeredAlertsForEmailAsync(string email, int limit, CancellationToken cancellationToken = default);
 }

@@ -4,14 +4,13 @@ using Weather.Application.Alerts.Commands.EvaluateAlerts;
 using Weather.Application.Alerts.Commands.Subscribe;
 using Weather.Application.Alerts.Commands.Unsubscribe;
 using Weather.Application.Alerts.Queries.GetSubscriptions;
-using Weather.Application.Alerts.Queries.GetTriggeredAlerts;
 using Weather.Application.Contracts;
 using Weather.Api.Hubs;
 
 namespace Weather.Api.Controllers;
 
 /// <summary>
-/// Manage weather alert subscriptions and poll triggered alerts.
+/// Manage live weather alert subscriptions.
 /// Alerts fire automatically after each data seed run.
 /// </summary>
 [ApiController]
@@ -91,26 +90,6 @@ public class AlertsController(ISender sender) : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new GetSubscriptionsQuery(email), cancellationToken);
-        return Ok(result);
-    }
-
-    /// <summary>Poll triggered alerts for a subscriber.</summary>
-    /// <remarks>
-    /// Returns the most recent alerts, newest first.
-    /// Alerts are created automatically after each data seed run whenever a subscribed station
-    /// reading crosses the configured threshold.
-    /// </remarks>
-    /// <param name="email">Subscriber's email address.</param>
-    /// <param name="limit">Maximum number of results to return (default 50).</param>
-    /// <param name="cancellationToken"></param>
-    [HttpGet("triggered")]
-    [ProducesResponseType<IReadOnlyList<TriggeredAlertResponse>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetTriggeredAsync(
-        [FromQuery] string email,
-        [FromQuery] int limit = 50,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await sender.Send(new GetTriggeredAlertsQuery(email, limit), cancellationToken);
         return Ok(result);
     }
 
