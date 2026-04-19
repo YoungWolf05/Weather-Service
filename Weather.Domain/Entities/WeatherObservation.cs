@@ -1,4 +1,4 @@
-namespace WeatherApi.Data.Models;
+namespace Weather.Domain.Entities;
 
 public class WeatherObservation
 {

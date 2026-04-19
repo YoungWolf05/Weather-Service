@@ -1,17 +1,16 @@
-using WeatherApi.Data;
+using Weather.Application.Abstractions;
 using WeatherApi.Endpoints;
-using WeatherApi.Services;
+using Weather.Infrastructure;
+using Weather.Infrastructure.Persistence;
+using Weather.Seeder;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// PostgreSQL via Aspire (connection string injected as "weatherdb")
-builder.AddNpgsqlDbContext<WeatherDbContext>("weatherdb");
+var connectionString = builder.Configuration.GetConnectionString("weatherdb")
+    ?? throw new InvalidOperationException("Connection string 'weatherdb' is required.");
 
-// Named HttpClient for Singapore data.gov.sg APIs
-builder.Services.AddHttpClient("sg-weather", c =>
-    c.BaseAddress = new Uri("https://api-open.data.gov.sg/v2/real-time/api/"));
-
-builder.Services.AddScoped<WeatherSeeder>();
+builder.Services.AddInfrastructure(connectionString);
+builder.Services.AddWeatherSeeder();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -25,8 +24,8 @@ app.UseSwaggerUI();
 // Create schema and seed on startup
 await using (var scope = app.Services.CreateAsyncScope())
 {
-    var db     = scope.ServiceProvider.GetRequiredService<WeatherDbContext>();
-    var seeder = scope.ServiceProvider.GetRequiredService<WeatherSeeder>();
+    var db = scope.ServiceProvider.GetRequiredService<WeatherDbContext>();
+    var seeder = scope.ServiceProvider.GetRequiredService<IWeatherDataSeeder>();
 
     await db.Database.EnsureCreatedAsync();
     await seeder.SeedAsync();
