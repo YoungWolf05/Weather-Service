@@ -1,5 +1,5 @@
 using MediatR;
-using Weather.Application.Abstractions;
+using Weather.Domain.Abstractions;
 
 namespace Weather.Application.Alerts.Commands.Unsubscribe;
 
@@ -9,3 +9,5 @@ public sealed class UnsubscribeFromAlertCommandHandler(
     public Task Handle(UnsubscribeFromAlertCommand request, CancellationToken cancellationToken)
         => alertRepository.DeactivateSubscriptionAsync(request.SubscriptionId, request.Email, cancellationToken);
 }
+
+

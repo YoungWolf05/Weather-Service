@@ -16,3 +16,5 @@ public class AlertSubscription
 
     public ICollection<TriggeredAlert> TriggeredAlerts { get; set; } = [];
 }
+
+

@@ -6,7 +6,7 @@ using Weather.Api.Hubs;
 using Weather.Api.Services;
 using Weather.Application;
 using Weather.Application.Alerts.Commands.EvaluateAlerts;
-using Weather.Application.Abstractions;
+using Weather.Domain.Abstractions;
 using Weather.Infrastructure;
 using Weather.Infrastructure.Persistence;
 using Weather.Seeder;
@@ -66,3 +66,5 @@ app.MapGet("/alerts/demo", () => Results.Redirect("/alerts-demo.html")).ExcludeF
 app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 
 app.Run();
+
+

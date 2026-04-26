@@ -7,3 +7,5 @@ namespace Weather.Application.Alerts.Commands.Unsubscribe;
 public sealed record UnsubscribeFromAlertCommand(
     int SubscriptionId,
     string Email) : IRequest;
+
+

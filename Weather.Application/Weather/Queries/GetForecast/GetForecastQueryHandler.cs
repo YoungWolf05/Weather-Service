@@ -1,6 +1,6 @@
 using MediatR;
-using Weather.Application.Abstractions;
-using Weather.Application.Contracts;
+using Weather.Domain.Abstractions;
+using Weather.Domain.Contracts.Weather;
 
 namespace Weather.Application.Weather.Queries.GetForecast;
 
@@ -12,3 +12,5 @@ public sealed class GetForecastQueryHandler(IWeatherReadRepository repository)
         CancellationToken cancellationToken)
         => repository.GetForecastAsync(request.Location, cancellationToken);
 }
+
+

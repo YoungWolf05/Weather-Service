@@ -33,3 +33,5 @@ public static class AlertChannel
     public static string ForEmail(string email)
         => $"alerts:{email.Trim().ToLowerInvariant()}";
 }
+
+

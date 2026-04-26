@@ -19,3 +19,5 @@ public class ForecastEntry
     public decimal? WindSpeedHighKmh { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+

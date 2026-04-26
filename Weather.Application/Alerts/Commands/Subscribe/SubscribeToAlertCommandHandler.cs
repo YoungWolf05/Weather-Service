@@ -1,6 +1,6 @@
 using MediatR;
-using Weather.Application.Abstractions;
-using Weather.Application.Contracts;
+using Weather.Domain.Abstractions;
+using Weather.Domain.Contracts.Alerts;
 using Weather.Domain.Entities;
 
 namespace Weather.Application.Alerts.Commands.Subscribe;
@@ -56,3 +56,5 @@ public sealed class SubscribeToAlertCommandHandler(
             $"alerts:{subscription.Email}");
     }
 }
+
+

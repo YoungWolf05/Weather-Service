@@ -1,4 +1,4 @@
-namespace Weather.Application.Contracts;
+namespace Weather.Domain.Contracts.Alerts;
 
 public sealed record AlertSubscriptionResponse(
     int Id,
@@ -16,3 +16,5 @@ public sealed record TriggeredAlertResponse(
     decimal ThresholdCelsius,
     string Condition,
     DateTime TriggeredAt);
+
+

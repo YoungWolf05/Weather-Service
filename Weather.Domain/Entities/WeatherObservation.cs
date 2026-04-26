@@ -9,3 +9,5 @@ public class WeatherObservation
     public decimal TemperatureCelsius { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+

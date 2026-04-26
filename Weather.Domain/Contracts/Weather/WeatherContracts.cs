@@ -1,4 +1,4 @@
-namespace Weather.Application.Contracts;
+namespace Weather.Domain.Contracts.Weather;
 
 public sealed record LocationResponse(
     int Id,
@@ -9,7 +9,9 @@ public sealed record LocationResponse(
     decimal? Latitude,
     decimal? Longitude);
 
-public sealed record WeatherObservationResponse(decimal TemperatureCelsius, DateTime ObservedAt);
+public sealed record WeatherObservationResponse(
+    decimal TemperatureCelsius,
+    DateTime ObservedAt);
 
 public sealed record WeatherForecastResponse(
     string Condition,
@@ -32,7 +34,10 @@ public sealed record CurrentWeatherResponse(
     WeatherObservationResponse? Observation,
     WeatherForecastResponse? Forecast);
 
-public sealed record ForecastPeriodResponse(DateTime ValidFrom, DateTime ValidTo, string Condition);
+public sealed record ForecastPeriodResponse(
+    DateTime ValidFrom,
+    DateTime ValidTo,
+    string Forecast);
 
 public sealed record ForecastResponse(
     string Region,
@@ -40,14 +45,16 @@ public sealed record ForecastResponse(
     WeatherForecastResponse? General,
     IReadOnlyList<ForecastPeriodResponse> Periods);
 
-public sealed record HistoricalObservationResponse(decimal TemperatureCelsius, DateTime ObservedAt);
+public sealed record HistoricalObservationResponse(
+    decimal TemperatureCelsius,
+    DateTime ObservedAt);
 
 public sealed record HistoricalForecastResponse(
     DateTime IssuedAt,
     DateTime ValidFrom,
     DateTime ValidTo,
     string ForecastType,
-    string Condition);
+    string Forecast);
 
 public sealed record HistoricalWeatherResponse(
     string Location,
@@ -56,3 +63,5 @@ public sealed record HistoricalWeatherResponse(
     int Count,
     IReadOnlyList<HistoricalObservationResponse>? Observations,
     IReadOnlyList<HistoricalForecastResponse>? Forecasts);
+
+

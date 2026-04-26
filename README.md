@@ -10,19 +10,20 @@ The current solution follows this dependency direction:
 Weather.AppHost -> Weather.Api
 Weather.Api -> Weather.Application, Weather.Infrastructure, Weather.Seeder
 Weather.Seeder -> Weather.Infrastructure
-Weather.Infrastructure -> Weather.Application -> Weather.Domain
+Weather.Application -> Weather.Domain
+Weather.Infrastructure -> Weather.Domain
 ```
 
 ## Layers
 
 - `Weather.Domain`
-  Holds the core entities and business data. It is the innermost layer and depends on nothing.
+  Holds the core entities, shared contracts, and repository/notification abstractions. It is the innermost layer and depends on nothing.
 
 - `Weather.Application`
-  Holds CQRS use cases, contracts, and abstractions. It depends only on `Weather.Domain`.
+  Holds CQRS use cases and MediatR handlers. It depends only on `Weather.Domain`.
 
 - `Weather.Infrastructure`
-  Implements repositories and persistence with EF Core and PostgreSQL. It depends on `Weather.Application` and `Weather.Domain`.
+  Implements repositories and persistence with EF Core and PostgreSQL. It depends only on `Weather.Domain`.
 
 - `Weather.Seeder`
   Imports weather data from the external Singapore source and stores it through infrastructure. It sits outside the core business layers.
@@ -42,7 +43,7 @@ CQRS is implemented in `Weather.Application` with MediatR.
 
 ## SignalR
 
-Live alerts are pushed from the API through SignalR after alert evaluation creates a new triggered alert. The application layer stays decoupled from SignalR through `IAlertNotifier`, which is implemented in the API layer and wired in the host.
+Live alerts are pushed from the API through SignalR after alert evaluation creates a new triggered alert. The application layer stays decoupled from SignalR through `IAlertNotifier`, which lives in `Weather.Domain`, is implemented in the API layer, and is wired in the host.
 
 ## Architecture Note
 

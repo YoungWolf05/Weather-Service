@@ -1,6 +1,6 @@
-using Weather.Application.Contracts;
+using Weather.Domain.Contracts.Weather;
 
-namespace Weather.Application.Abstractions;
+namespace Weather.Domain.Abstractions;
 
 public interface IWeatherReadRepository
 {
@@ -26,3 +26,5 @@ public interface IWeatherReadRepository
         int locationId,
         CancellationToken cancellationToken = default);
 }
+
+

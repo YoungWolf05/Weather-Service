@@ -1,5 +1,5 @@
 using MediatR;
-using Weather.Application.Contracts;
+using Weather.Domain.Contracts.Alerts;
 
 namespace Weather.Application.Alerts.Commands.Subscribe;
 
@@ -12,3 +12,5 @@ public sealed record SubscribeToAlertCommand(
     string Location,
     decimal ThresholdCelsius,
     string Condition) : IRequest<SignalRAlertSubscriptionResponse>;
+
+

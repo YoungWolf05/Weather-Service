@@ -1,4 +1,4 @@
-namespace Weather.Application.Contracts;
+namespace Weather.Domain.Contracts.Alerts;
 
 public sealed record SignalRAlertSubscriptionResponse(
     int Id,
@@ -9,3 +9,5 @@ public sealed record SignalRAlertSubscriptionResponse(
     bool IsActive,
     DateTime CreatedAt,
     string LiveChannel);
+
+

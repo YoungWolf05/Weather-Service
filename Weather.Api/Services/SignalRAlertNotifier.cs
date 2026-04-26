@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Weather.Api.Hubs;
-using Weather.Application.Abstractions;
-using Weather.Application.Contracts;
+using Weather.Domain.Abstractions;
+using Weather.Domain.Contracts.Alerts;
 
 namespace Weather.Api.Services;
 
@@ -15,3 +15,5 @@ public sealed class SignalRAlertNotifier(IHubContext<AlertsHub> hubContext) : IA
             .Group(AlertChannel.ForEmail(email))
             .SendAsync(AlertsHub.ClientMethod, alert, cancellationToken);
 }
+
+

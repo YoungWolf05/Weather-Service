@@ -1,5 +1,5 @@
 using CsvHelper.Configuration;
-using Weather.Application.Contracts;
+using Weather.Domain.Contracts.Weather;
 
 namespace Weather.Api.Csv;
 
@@ -30,3 +30,5 @@ public sealed class WeatherExportMap : ClassMap<CurrentWeatherExportDto>
         Map(m => m.ForecastIssuedAt).Name("Forecast Issued At (UTC)");
     }
 }
+
+

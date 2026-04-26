@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Weather.Application.Abstractions;
-using Weather.Application.Contracts;
+using Weather.Domain.Abstractions;
+using Weather.Domain.Contracts.Weather;
 using Weather.Domain.Entities;
 using Weather.Infrastructure.Persistence;
 
@@ -250,3 +250,5 @@ public class WeatherReadRepository(WeatherDbContext dbContext) : IWeatherReadRep
         return (row.Id, row.TemperatureCelsius, row.ObservedAt);
     }
 }
+
+

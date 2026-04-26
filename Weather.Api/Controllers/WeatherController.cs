@@ -2,7 +2,7 @@ using CsvHelper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
-using Weather.Application.Contracts;
+using Weather.Domain.Contracts.Weather;
 using Weather.Application.Weather.Queries.ExportCurrentWeather;
 using Weather.Application.Weather.Queries.GetCurrentWeather;
 using Weather.Application.Weather.Queries.GetForecast;
@@ -129,3 +129,5 @@ public class WeatherController(ISender sender) : ControllerBase
         return File(stream, "text/csv", $"weather-{location}.csv");
     }
 }
+
+

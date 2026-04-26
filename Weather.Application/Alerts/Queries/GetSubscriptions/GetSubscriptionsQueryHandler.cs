@@ -1,6 +1,6 @@
 using MediatR;
-using Weather.Application.Abstractions;
-using Weather.Application.Contracts;
+using Weather.Domain.Abstractions;
+using Weather.Domain.Contracts.Alerts;
 
 namespace Weather.Application.Alerts.Queries.GetSubscriptions;
 
@@ -12,3 +12,5 @@ public sealed class GetSubscriptionsQueryHandler(
         CancellationToken cancellationToken)
         => alertRepository.GetSubscriptionsForEmailAsync(request.Email.ToLowerInvariant(), cancellationToken);
 }
+
+

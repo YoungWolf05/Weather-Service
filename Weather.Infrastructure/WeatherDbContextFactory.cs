@@ -19,3 +19,5 @@ internal sealed class WeatherDbContextFactory : IDesignTimeDbContextFactory<Weat
         return new WeatherDbContext(options);
     }
 }
+
+

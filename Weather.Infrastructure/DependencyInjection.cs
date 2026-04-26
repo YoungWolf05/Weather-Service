@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Weather.Application.Abstractions;
+using Weather.Domain.Abstractions;
 using Weather.Infrastructure.Persistence;
 using Weather.Infrastructure.Repositories;
 
@@ -17,3 +17,5 @@ public static class DependencyInjection
         return services;
     }
 }
+
+

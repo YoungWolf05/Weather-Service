@@ -1,6 +1,6 @@
 using MediatR;
-using Weather.Application.Abstractions;
-using Weather.Application.Contracts;
+using Weather.Domain.Abstractions;
+using Weather.Domain.Contracts.Weather;
 
 namespace Weather.Application.Weather.Queries.ExportCurrentWeather;
 
@@ -33,3 +33,5 @@ public sealed class ExportCurrentWeatherQueryHandler(IWeatherReadRepository repo
             weather.Forecast?.IssuedAt);
     }
 }
+
+

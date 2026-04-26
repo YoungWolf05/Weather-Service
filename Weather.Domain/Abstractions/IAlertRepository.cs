@@ -1,7 +1,7 @@
-using Weather.Application.Contracts;
+using Weather.Domain.Contracts.Alerts;
 using Weather.Domain.Entities;
 
-namespace Weather.Application.Abstractions;
+namespace Weather.Domain.Abstractions;
 
 public interface IAlertRepository
 {
@@ -17,3 +17,5 @@ public interface IAlertRepository
 
     Task<IReadOnlyList<AlertSubscriptionResponse>> GetSubscriptionsForEmailAsync(string email, CancellationToken cancellationToken = default);
 }
+
+

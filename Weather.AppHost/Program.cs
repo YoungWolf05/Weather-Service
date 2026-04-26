@@ -13,3 +13,5 @@ var weatherApi = builder.AddProject<Projects.Weather_Api>("weatherapi")
 weatherApi.WithUrl("http://localhost:5000/alerts/demo", "Alerts Demo");
 
 builder.Build().Run();
+
+

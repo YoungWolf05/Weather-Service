@@ -4,7 +4,7 @@ using Weather.Application.Alerts.Commands.EvaluateAlerts;
 using Weather.Application.Alerts.Commands.Subscribe;
 using Weather.Application.Alerts.Commands.Unsubscribe;
 using Weather.Application.Alerts.Queries.GetSubscriptions;
-using Weather.Application.Contracts;
+using Weather.Domain.Contracts.Alerts;
 using Weather.Api.Hubs;
 
 namespace Weather.Api.Controllers;
@@ -106,3 +106,5 @@ public class AlertsController(ISender sender) : ControllerBase
         return Ok(new { alertsFired = fired });
     }
 }
+
+

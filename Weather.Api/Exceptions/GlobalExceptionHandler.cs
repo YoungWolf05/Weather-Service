@@ -51,3 +51,5 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         || ex.InnerException?.Message.Contains("unique constraint", StringComparison.OrdinalIgnoreCase) == true
         || ex.InnerException?.Message.Contains("23505", StringComparison.OrdinalIgnoreCase) == true; // Postgres error code
 }
+
+

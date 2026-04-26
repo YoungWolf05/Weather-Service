@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Weather.Application.Abstractions;
-using Weather.Application.Contracts;
+using Weather.Domain.Abstractions;
+using Weather.Domain.Contracts.Alerts;
 using Weather.Domain.Entities;
 using Weather.Infrastructure.Persistence;
 
@@ -72,3 +72,5 @@ public class AlertRepository(WeatherDbContext dbContext) : IAlertRepository
                 s.CreatedAt))
             .ToListAsync(cancellationToken);
 }
+
+

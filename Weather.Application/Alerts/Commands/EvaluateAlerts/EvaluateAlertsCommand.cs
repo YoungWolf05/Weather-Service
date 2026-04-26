@@ -9,3 +9,5 @@ namespace Weather.Application.Alerts.Commands.EvaluateAlerts;
 /// </summary>
 /// <returns>Number of new alerts fired.</returns>
 public sealed record EvaluateAlertsCommand : IRequest<int>;
+
+

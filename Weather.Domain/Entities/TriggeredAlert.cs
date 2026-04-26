@@ -10,3 +10,5 @@ public class TriggeredAlert
     public decimal TemperatureCelsius { get; set; }
     public DateTime TriggeredAt { get; set; }
 }
+
+
