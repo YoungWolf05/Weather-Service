@@ -7,7 +7,7 @@ public sealed class UnsubscribeFromAlertCommandHandler(
     IAlertRepository alertRepository) : IRequestHandler<UnsubscribeFromAlertCommand>
 {
     public Task Handle(UnsubscribeFromAlertCommand request, CancellationToken cancellationToken)
-        => alertRepository.DeactivateSubscriptionAsync(request.SubscriptionId, request.Email, cancellationToken);
+        => alertRepository.DeleteSubscriptionAsync(request.SubscriptionId, request.Email, cancellationToken);
 }
 
 

@@ -79,7 +79,7 @@ public class WeatherDbContext(DbContextOptions<WeatherDbContext> options) : DbCo
             entity.ToTable("alert_triggered");
             entity.Property(x => x.TemperatureCelsius).HasPrecision(5, 2);
             entity.Property(x => x.TriggeredAt).HasDefaultValueSql("NOW()");
-            entity.HasIndex(x => new { x.AlertSubscriptionId, x.ObservationId }).IsUnique();
+            entity.HasIndex(x => new { x.AlertSubscriptionId, x.ObservationId });
             entity.HasOne(x => x.AlertSubscription)
                 .WithMany(x => x.TriggeredAlerts)
                 .HasForeignKey(x => x.AlertSubscriptionId);

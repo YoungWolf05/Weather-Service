@@ -12,7 +12,6 @@ public class AlertRepository(WeatherDbContext dbContext) : IAlertRepository
         CancellationToken cancellationToken = default)
         => await dbContext.AlertSubscriptions
             .Include(s => s.Location)
-            .Where(s => s.IsActive)
             .ToListAsync(cancellationToken);
 
     public async Task AddSubscriptionAsync(
@@ -23,7 +22,7 @@ public class AlertRepository(WeatherDbContext dbContext) : IAlertRepository
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeactivateSubscriptionAsync(
+    public async Task DeleteSubscriptionAsync(
         int id,
         string email,
         CancellationToken cancellationToken = default)
@@ -35,18 +34,9 @@ public class AlertRepository(WeatherDbContext dbContext) : IAlertRepository
         if (!subscription.Email.Equals(email.ToLowerInvariant(), StringComparison.Ordinal))
             throw new ArgumentException("Email does not match the subscription owner.", nameof(email));
 
-        subscription.IsActive = false;
+        dbContext.AlertSubscriptions.Remove(subscription);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
-
-    public Task<bool> HasAlertBeenTriggeredAsync(
-        int subscriptionId,
-        long observationId,
-        CancellationToken cancellationToken = default)
-        => dbContext.TriggeredAlerts
-            .AnyAsync(
-                t => t.AlertSubscriptionId == subscriptionId && t.ObservationId == observationId,
-                cancellationToken);
 
     public async Task AddTriggeredAlertAsync(
         TriggeredAlert alert,
@@ -72,5 +62,3 @@ public class AlertRepository(WeatherDbContext dbContext) : IAlertRepository
                 s.CreatedAt))
             .ToListAsync(cancellationToken);
 }
-
-

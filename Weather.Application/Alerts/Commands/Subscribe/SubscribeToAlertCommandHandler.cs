@@ -35,12 +35,12 @@ public sealed class SubscribeToAlertCommandHandler(
 
         var subscription = new AlertSubscription
         {
-            Email           = request.Email.ToLowerInvariant(),
-            LocationId      = location.Id,
+            Email            = request.Email.ToLowerInvariant(),
+            LocationId       = location.Id,
             ThresholdCelsius = request.ThresholdCelsius,
-            Condition       = condition,
-            IsActive        = true,
-            CreatedAt       = DateTime.UtcNow
+            Condition        = condition,
+            IsActive         = true,
+            CreatedAt        = DateTime.UtcNow
         };
 
         await alertRepository.AddSubscriptionAsync(subscription, cancellationToken);
@@ -56,5 +56,3 @@ public sealed class SubscribeToAlertCommandHandler(
             $"alerts:{subscription.Email}");
     }
 }
-
-

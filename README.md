@@ -51,8 +51,6 @@ Keeping everything inside `Weather.Api` avoids an extra host project, but it als
 
 ## Run
 
-Use `Weather.AppHost` for local orchestration, or build from the CLI:
-
 ```bash
-dotnet build Weather.AppHost/Weather.sln --configuration Release
+dotnet run --project .\Weather.AppHost\
 ```

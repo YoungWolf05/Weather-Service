@@ -31,12 +31,6 @@ public sealed class EvaluateAlertsCommandHandler(
             if (!conditionMet)
                 continue;
 
-            var alreadyTriggered = await alertRepository.HasAlertBeenTriggeredAsync(
-                subscription.Id, observationId, cancellationToken);
-
-            if (alreadyTriggered)
-                continue;
-
             var triggeredAlert = new TriggeredAlert
             {
                 AlertSubscriptionId = subscription.Id,
